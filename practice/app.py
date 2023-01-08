@@ -3,6 +3,8 @@ from urllib.request import urlopen
 from random import shuffle
 from flask import Flask, render_template
 from bs4 import BeautifulSoup
+import ssl
+ssl._create_default_https_context = ssl._create_unverified_context
 
 app = Flask(__name__)
 
@@ -13,37 +15,18 @@ def index():
 
 @app.route("/api/recommend_article")
 def api_recommend_article():
-    """はてブのホットエントリーから記事を入手して、ランダムに1件返却します."""
+    with urlopen("https://b.hatena.ne.jp/hotentry/all") as res:
+        html = res. read() . decode ("utf-8")
 
-    """
-        **** ここを実装します（基礎課題） ****
-
-        1. はてブのホットエントリーページのHTMLを取得する
-        2. BeautifulSoupでHTMLを読み込む
-        3. 記事一覧を取得する
-        4. ランダムに1件取得する
-        5. 以下の形式で返却する.
-            {
-                "content" : "記事のタイトル",
-                "link" : "記事のURL"
-            }
-    """
-
-    # ダミー
+    soup = BeautifulSoup (html, "html.parser") #BeautifulSoupでHTMLを読み込む
+    items = soup.select(".entrylist-contents-title a")
+    shuffle(items) #ランダム
+    item = items[0] #1件取り出す
+    print(item)
     return json.dumps({
-        "content" : "記事のタイトルだよー",
-        "link" : "記事のURLだよー"
+        "content" : item["title"],
+        "link": item["href"]
     })
-
-@app.route("/api/xxxx")
-def api_xxxx():
-    """
-        **** ここを実装します（発展課題） ****
-        ・自分の好きなサイトをWebスクレイピングして情報をフロントに返却します
-        ・お天気APIなども良いかも
-        ・関数名は適宜変更してください
-    """
-    pass
 
 if __name__ == "__main__":
     app.run(debug=True, port=5004)
